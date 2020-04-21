@@ -9,10 +9,10 @@ def start():
      }
      dataRequest = DataRequest(request)
      res = dataRequest.invoke()
-     view = memoryview(res.bytes)
-     totalLength = len(view)
-     ver = bytes(view[0:1])
-     print(ver)
+    #  view = memoryview(res)
+    #  totalLength = len(view)
+    #  ver = bytes(view[0:1])
+    #  print(ver)
 
 
 start()
