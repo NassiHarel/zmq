@@ -1,0 +1,32 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Tests",
+            "type": "python",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "gevent": true,
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "module": "pytest",
+            "args": [
+                "tests/test_communication.py::test_get_data_bytes"
+            ],
+            "pythonPath": "${config:python.interpreterPath}"
+        },
+        {
+            "name": "Python",
+            "type": "python",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "program": "${workspaceRoot}/server.py",
+            "cwd": "${workspaceFolder}",
+            "gevent": true,
+            "stopOnEntry": false,
+            "justMyCode": false,
+            "pythonPath": "${config:python.interpreterPath}"
+        }
+    ]
+}
