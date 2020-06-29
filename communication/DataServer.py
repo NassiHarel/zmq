@@ -22,4 +22,5 @@ class DataServer(object):
            
     @timing
     def send(self):
-        self._socket.send(self.reply(), copy=False) # copy add 2200ms
+        res =  self._socket.send(self.reply(), copy=False, track=True)
+        print(res) # copy add 2200ms

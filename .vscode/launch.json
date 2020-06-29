@@ -5,7 +5,7 @@
             "name": "Python: Run",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/client.py",
+            "program": "${workspaceFolder}/server.py",
             "cwd": "${workspaceFolder}",
             "gevent": true,
             "stopOnEntry": false,
