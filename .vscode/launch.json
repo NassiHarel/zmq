@@ -5,13 +5,13 @@
             "name": "Python: Run",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/server.py",
+            "program": "${workspaceFolder}/lib/push.py",
             "cwd": "${workspaceFolder}",
             "gevent": true,
             "stopOnEntry": false,
             "justMyCode": false,
             "console": "integratedTerminal",
-            "pythonPath": "${config:python.pythonPath}"
+            "pythonPath": "${config:python.interpreterPath}"
         },
     ]
 }
