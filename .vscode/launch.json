@@ -14,7 +14,7 @@
             "name": "Python: Run",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/client.py",
+            "program": "${workspaceFolder}/lib/push.py",
             "cwd": "${workspaceFolder}",
             "gevent": true,
             "stopOnEntry": false,
