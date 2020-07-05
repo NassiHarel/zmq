@@ -16,10 +16,10 @@ def producer():
     num = 0
 
     while True:
-        time.sleep(0.001)
+        # time.sleep(0.001)
         num += 1
-        if(num == 20):
-            break
+        # if(num == 20):
+        #     break
 
         work_message = encoding.encode({'num': num, "object": {"data": True}, "array": [1, 2, 3, 4, 5]})
         socket.send(work_message, copy=False)

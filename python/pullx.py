@@ -16,22 +16,29 @@ socket_pull = context.socket(zmq.PULL)
 socket_pull.connect("tcp://127.0.0.1:9022")
 stream_pull = zmqstream.ZMQStream(socket_pull)
 diffs = []
+count = 0
 
 
 def process(msg):
-    time1 = time.time()
+    global count
+    count += 1
+    # time1 = time.time()
     data = encoding.decode(msg)
     num = data["num"]
     print('receive message {num}'.format(num=num))
-    sleep = randrange(5)
-    print('sleeping {sleep} seconds'.format(sleep=sleep))
-    time.sleep(sleep)
-    time2 = time.time()
-    diff = time2 - time1
-    diffs.append(diff)
+    sleep = randrange(10)
+    # print('sleeping {sleep} seconds'.format(sleep=sleep))
+    # time.sleep(0.01)
+    # time2 = time.time()
+    # diff = time2 - time1
+    diffs.append(sleep)
 
-    if(num == 20):
-        statistics.median(list_name)
+    if(count % 5 == 0):
+        median = statistics.median(diffs)
+        mean = statistics.mean(diffs)
+        print('median = {median}, mean = {mean}'.format(median=median, mean=mean))
+        count = 0
+        diffs.clear()
 
 
 def getcommand(msg):
