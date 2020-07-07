@@ -24,7 +24,7 @@ def process(msg):
     num = data["num"]
     print('receive message {num}'.format(num=num))
     sleep = randrange(10)
-    # time.sleep(5)
+    time.sleep(0.005)
     diffs.append(sleep)
 
     if(count % 10 == 0):
@@ -32,7 +32,6 @@ def process(msg):
         mean = statistics.mean(diffs)
         diffs.clear() # if we don't clear, this will become very slow
         stats = {"median": median, "mean": mean, "count": count}
-
 
 def setInterval(func, sec, arg):
     def func_wrapper():
@@ -51,12 +50,10 @@ def sendStatistics(socketReq):
     socketReq.send(encoding.encode(stats))
     data = socketReq.recv()
 
-
 def startStatistics():
     socketReq = context.socket(zmq.REQ)
     socketReq.connect("tcp://127.0.0.1:9023")
     setInterval(sendStatistics, 2, socketReq)
-
 
 @timing
 def consumer():
@@ -64,12 +61,12 @@ def consumer():
     startStatistics()
 
     socketPull = context.socket(zmq.PULL)
-    socketPull.setsockopt(zmq.RCVHWM, 1)
-    socketPull.setsockopt(zmq.RCVBUF, 1)
+    # socketPull.setsockopt(zmq.RCVHWM, 1)
+    socketPull.setsockopt(zmq.RCVBUF, 2)
     socketPull.connect("tcp://127.0.0.1:9022")
 
     while True:
-        if(count == 100000):
+        if(count == 10000):
             break
         msg = socketPull.recv()
         process(msg)

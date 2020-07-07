@@ -38,20 +38,21 @@ def producer():
     global msgCount
     
     socketPush = context.socket(zmq.PUSH)
-    socketPush.setsockopt(zmq.SNDHWM, 1)
-    socketPush.setsockopt(zmq.SNDBUF, 1)
+    # socketPush.setsockopt(zmq.SNDHWM, 1)
+    socketPush.setsockopt(zmq.SNDBUF, 2)
     socketPush.bind("tcp://*:9022")
    
     threading.Thread(target=recvStatistics).start()
+    bigBytes = bytearray(b'\xdd'*(1024*1024))
 
     while True:
        
-        if(msgCount == 100000):
+        if(msgCount == 10000):
             break
         
         msgCount += 1
-        work_message = encoding.encode({'num': msgCount, "object": {"data": True}, "array": [1, 2, 3, 4, 5]})
-        socketPush.send(work_message, copy=False)
+        message = encoding.encode({'num': msgCount, "object": {"data": True}, "bigBytes": bigBytes} )
+        socketPush.send(message, copy=False)
         print('sent message {count}'.format(count=msgCount))
 
 
