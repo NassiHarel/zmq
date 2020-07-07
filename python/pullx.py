@@ -9,12 +9,9 @@ from zmq.eventloop import ioloop, zmqstream
 from util.encoding import Encoding
 from util.decorators import timing
 
-encoding = Encoding("msgpack")
 context = zmq.Context()
-socketPull = context.socket(zmq.PULL)
-socketReq = context.socket(zmq.REQ)
-socketPull.connect("tcp://127.0.0.1:9022")
-socketReq.connect("tcp://127.0.0.1:9023")
+encoding = Encoding("msgpack")
+
 diffs = []
 count = 0
 stats = None
@@ -27,7 +24,7 @@ def process(msg):
     num = data["num"]
     print('receive message {num}'.format(num=num))
     sleep = randrange(10)
-    time.sleep(0.5)
+    # time.sleep(5)
     diffs.append(sleep)
 
     if(count % 10 == 0):
@@ -37,15 +34,15 @@ def process(msg):
         stats = {"median": median, "mean": mean, "count": count}
 
 
-def setInterval(func, sec):
+def setInterval(func, sec, arg):
     def func_wrapper():
-        setInterval(func, sec)
-        func()
+        setInterval(func, sec, arg)
+        func(arg)
     t = threading.Timer(sec, func_wrapper)
     t.start()
     return t
 
-def sendStatistics():
+def sendStatistics(socketReq):
     global stats
     if(not stats):
         print('no statistics')
@@ -55,15 +52,21 @@ def sendStatistics():
     data = socketReq.recv()
 
 
-def getcommand(msg):
-    msg = msg[0]
-    process(msg)
+def startStatistics():
+    socketReq = context.socket(zmq.REQ)
+    socketReq.connect("tcp://127.0.0.1:9023")
+    setInterval(sendStatistics, 2, socketReq)
 
 
 @timing
 def consumer():
     global count
-    setInterval(sendStatistics, 2)
+    startStatistics()
+
+    socketPull = context.socket(zmq.PULL)
+    socketPull.setsockopt(zmq.RCVHWM, 1)
+    socketPull.setsockopt(zmq.RCVBUF, 1)
+    socketPull.connect("tcp://127.0.0.1:9022")
 
     while True:
         if(count == 100000):

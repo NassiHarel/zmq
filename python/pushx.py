@@ -5,9 +5,11 @@ import threading
 from util.encoding import Encoding
 from util.decorators import timing
 
+context = zmq.Context()
 msgCount = 0
+encoding = Encoding("msgpack")
 
-def recvStatistics(socketRep, encoding):
+def recvStatistics():
 
     """Receive Statistics
 
@@ -18,6 +20,9 @@ def recvStatistics(socketRep, encoding):
     """
     
     global msgCount
+
+    socketRep = context.socket(zmq.REP)
+    socketRep.bind("tcp://*:9023")
 
     while True:
         msg = socketRep.recv()
@@ -31,14 +36,13 @@ def recvStatistics(socketRep, encoding):
 @timing
 def producer():
     global msgCount
-    context = zmq.Context()
+    
     socketPush = context.socket(zmq.PUSH)
-    socketRep = context.socket(zmq.REP)
+    socketPush.setsockopt(zmq.SNDHWM, 1)
+    socketPush.setsockopt(zmq.SNDBUF, 1)
     socketPush.bind("tcp://*:9022")
-    socketRep.bind("tcp://*:9023")
-    encoding = Encoding("msgpack")
    
-    threading.Thread(target=recvStatistics, args=(socketRep, encoding)).start()
+    threading.Thread(target=recvStatistics).start()
 
     while True:
        
@@ -49,7 +53,6 @@ def producer():
         work_message = encoding.encode({'num': msgCount, "object": {"data": True}, "array": [1, 2, 3, 4, 5]})
         socketPush.send(work_message, copy=False)
         print('sent message {count}'.format(count=msgCount))
-
 
 
 producer()

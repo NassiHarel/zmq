@@ -21,7 +21,7 @@
             "type": "python",
             "request": "launch",
             "console": "integratedTerminal",
-            "program": "${workspaceRoot}/pullx.py",
+            "program": "${workspaceRoot}/pushx.py",
             "cwd": "${workspaceFolder}",
             "gevent": true,
             "stopOnEntry": false,
