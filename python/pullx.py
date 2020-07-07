@@ -3,42 +3,56 @@ import time
 import zmq
 import gevent
 import statistics
+import threading
 from random import randrange
 from zmq.eventloop import ioloop, zmqstream
 from util.encoding import Encoding
-
+from util.decorators import timing
 
 encoding = Encoding("msgpack")
 context = zmq.Context()
-socket_pull = context.socket(zmq.PULL)
-# socket_pull.setsockopt(zmq.RCVHWM, 1)
-# socket_pull.setsockopt(zmq.RCVBUF, 1)
-socket_pull.connect("tcp://127.0.0.1:9022")
-stream_pull = zmqstream.ZMQStream(socket_pull)
+socketPull = context.socket(zmq.PULL)
+socketReq = context.socket(zmq.REQ)
+socketPull.connect("tcp://127.0.0.1:9022")
+socketReq.connect("tcp://127.0.0.1:9023")
 diffs = []
 count = 0
-
+stats = None
 
 def process(msg):
     global count
+    global stats
     count += 1
-    # time1 = time.time()
     data = encoding.decode(msg)
     num = data["num"]
     print('receive message {num}'.format(num=num))
     sleep = randrange(10)
-    # print('sleeping {sleep} seconds'.format(sleep=sleep))
-    # time.sleep(0.01)
-    # time2 = time.time()
-    # diff = time2 - time1
+    time.sleep(0.5)
     diffs.append(sleep)
 
-    if(count % 5 == 0):
+    if(count % 10 == 0):
         median = statistics.median(diffs)
         mean = statistics.mean(diffs)
-        print('median = {median}, mean = {mean}'.format(median=median, mean=mean))
-        count = 0
-        diffs.clear()
+        diffs.clear() # if we don't clear, this will become very slow
+        stats = {"median": median, "mean": mean, "count": count}
+
+
+def setInterval(func, sec):
+    def func_wrapper():
+        setInterval(func, sec)
+        func()
+    t = threading.Timer(sec, func_wrapper)
+    t.start()
+    return t
+
+def sendStatistics():
+    global stats
+    if(not stats):
+        print('no statistics')
+        return
+    print('send statistics median={median}, mean={mean}, count={count}'.format(**stats))
+    socketReq.send(encoding.encode(stats))
+    data = socketReq.recv()
 
 
 def getcommand(msg):
@@ -46,10 +60,16 @@ def getcommand(msg):
     process(msg)
 
 
-# while True:
-#     msg = socket_pull.recv()
-#     process(msg)
+@timing
+def consumer():
+    global count
+    setInterval(sendStatistics, 2)
 
-stream_pull.on_recv(getcommand)
-instance = ioloop.IOLoop.instance()
-instance.start()
+    while True:
+        if(count == 100000):
+            break
+        msg = socketPull.recv()
+        process(msg)
+
+
+consumer()
