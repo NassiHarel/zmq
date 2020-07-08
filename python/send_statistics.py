@@ -1,13 +1,10 @@
 import sys
 import time
 import zmq
-import gevent
 import statistics
 import threading
 from random import randrange
-from zmq.eventloop import ioloop, zmqstream
 from util.encoding import Encoding
-from util.decorators import timing
 
 context = zmq.Context()
 encoding = Encoding("msgpack")
@@ -16,18 +13,15 @@ diffs = []
 count = 0
 stats = None
 
-def process(msg):
+def processStat():
     global count
     global stats
     count += 1
-    data = encoding.decode(msg)
-    num = data["num"]
-    print('receive message {num}'.format(num=num))
-    sleep = randrange(10)
-    time.sleep(0.005)
-    diffs.append(sleep)
+   
+    random = randrange(10)
+    diffs.append(random)
 
-    if(count % 10 == 0):
+    if(count % 5 == 0):
         median = statistics.median(diffs)
         mean = statistics.mean(diffs)
         diffs.clear() # if we don't clear, this will become very slow
@@ -55,21 +49,4 @@ def startStatistics():
     socketReq.connect("tcp://127.0.0.1:9023")
     setInterval(sendStatistics, 2, socketReq)
 
-@timing
-def consumer():
-    global count
-    startStatistics()
 
-    socketPull = context.socket(zmq.PULL)
-    # socketPull.setsockopt(zmq.RCVHWM, 1)
-    socketPull.setsockopt(zmq.RCVBUF, 2)
-    socketPull.connect("tcp://127.0.0.1:9022")
-
-    while True:
-        if(count == 10000):
-            break
-        msg = socketPull.recv()
-        process(msg)
-
-
-consumer()

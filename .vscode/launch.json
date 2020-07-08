@@ -14,13 +14,13 @@
             "name": "Python: Run",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/lib/push.py",
+            "program": "${workspaceFolder}/python/push.py",
             "cwd": "${workspaceFolder}",
             "gevent": true,
             "stopOnEntry": false,
             "justMyCode": false,
             "console": "integratedTerminal",
-            "pythonPath": "${config:python.interpreterPath}"
+            "pythonPath": "${command:python.interpreterPath}"
         },
     ]
 }
