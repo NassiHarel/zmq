@@ -3,8 +3,8 @@ import zmq
 from util.encoding import Encoding
 from util.decorators import timing
 from recv_statistics import startStatistics
-context = zmq.Context()
 
+context = zmq.Context()
 msgCount = 0
 
 def processStat():

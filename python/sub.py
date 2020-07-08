@@ -29,7 +29,7 @@ def startSubscriber():
     subscriber.connect("tcp://127.0.0.1:9022")
 
     while True:
-        if(msgCount == 10000):
+        if(msgCount == 100000):
             break
 
         msgCount += 1

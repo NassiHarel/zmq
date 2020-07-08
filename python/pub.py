@@ -4,23 +4,27 @@ import gevent
 import threading
 from util.encoding import Encoding
 from util.decorators import timing
-from recv_statistics import processStat
+from recv_statistics import startStatistics
 
 context = zmq.Context()
+msgCount = 0
 
+def processStat():
+    return msgCount
 
 @timing
 def startPublisher():
-    msgCount = 0
+    global msgCount
     encoding = Encoding("msgpack")
     publisher = context.socket(zmq.PUB)
     # publisher.setsockopt(zmq.SNDHWM, 1)
     # publisher.setsockopt(zmq.SNDBUF, 2)
     publisher.bind("tcp://*:9022")
-    bigBytes = bytearray(b'\xdd'*(1024*1024))
+    bigBytes = 1 # bytearray(b'\xdd'*(1024*1024))
+    startStatistics(processStat)
 
     while True:
-        if(msgCount == 10000):
+        if(msgCount == 100000):
             break
         
         msgCount += 1
