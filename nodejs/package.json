@@ -1,5 +1,5 @@
 {
-  "name": "@hkube/worker-data-adapter",
+  "name": "zmq-nodejs",
   "version": "1.0.8",
   "description": "hkube data adapter for get/set data via storage/networking",
   "main": "index.js",
@@ -20,19 +20,10 @@
   "license": "ISC",
   "dependencies": {
     "performance-now": "^2.1.0",
-    "zeromq": "^5.2.0"
+    "zeromq": "^5.2.0",
+    "async": "^0.9.0"
   },
   "devDependencies": {
-    "chai": "^4.2.0",
-    "chai-as-promised": "^7.1.1",
-    "coveralls": "^3.0.6",
-    "eslint": "^6.2.2",
-    "eslint-config-airbnb-base": "^14.0.0",
-    "eslint-plugin-chai-friendly": "^0.4.1",
-    "eslint-plugin-import": "^2.18.2",
-    "mocha": "^6.2.0",
-    "nyc": "^14.1.1",
-    "pre-commit": "^1.2.2",
-    "sinon": "^9.0.2"
+    "debug": "^4.1.1"
   }
 }

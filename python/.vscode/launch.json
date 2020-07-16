@@ -14,7 +14,7 @@
             "args": [
                 "tests/test_communication.py::test_get_data_bytes"
             ],
-            "pythonPath": "${config:python.interpreterPath}"
+            "pythonPath": "${command:python.interpreterPath}"
         },
         {
             "name": "Python",
@@ -26,7 +26,7 @@
             "gevent": true,
             "stopOnEntry": false,
             "justMyCode": false,
-            "pythonPath": "${config:python.interpreterPath}"
+            "pythonPath": "${command:python.interpreterPath}"
         }
     ]
 }

@@ -13,7 +13,7 @@ def process(msg):
     data = encoding.decode(msg)
     num = data["num"]
     print('receive message {num}'.format(num=num))
-    # time.sleep(0.1)
+    time.sleep(0.1)
     processStat()
 
 
