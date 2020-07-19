@@ -1,21 +1,7 @@
-import sys
-import time
-import zmq
-import statistics
-import threading
-from random import randrange
-from util.encoding import Encoding
-from util.decorators import timing
-
-context = zmq.Context()
-encoding = Encoding("msgpack")
-
-socketReq = context.socket(zmq.REQ)
-socketReq.connect("tcp://127.0.0.1:9023")
-count = 0
-
 import itertools
 import logging
+import sys
+import zmq
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
 
@@ -38,10 +24,12 @@ for sequence in itertools.count():
     while True:
         if (client.poll(REQUEST_TIMEOUT) & zmq.POLLIN) != 0:
             reply = client.recv()
-            logging.info("Resending (%s)", request)
-            if False:
+            if int(reply) == sequence:
                 logging.info("Server replied OK (%s)", reply)
                 break
+            else:
+                logging.error("Malformed reply from server: %s", reply)
+                continue
 
         retries_left -= 1
         logging.warning("No response from server")

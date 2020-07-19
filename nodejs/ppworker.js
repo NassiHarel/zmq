@@ -1,8 +1,9 @@
 const Worker = require('./worker');
 
-function workerFn(cb) {
+function workerFn(d) {
     console.log(Date.now() + ' - Got a request for work');
-    return cb(JSON.stringify({ ppworker: 'pretending to do work' }));
+    const data = d.toString('utf8');
+    return data + " world";
 }
 
-const ppw = new Worker({ url: 'tcp://127.0.0.1:9001' }, workerFn);
+const ppw = new Worker({ url: 'tcp://127.0.0.1:9023' }, workerFn);

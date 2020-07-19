@@ -1,22 +1,17 @@
 const zmq = require('zeromq');
+const Queue = require('./queue');
 
-const port = 9020;
-const host = "127.0.0.1";
 
-const _wrapper = (func) => {
-    const wrapper = async (args) => {
-        const start = now();
-        const result = await func(args);
-        const end = now();
-        const diff = (end - start).toFixed(3);
-        const operation = func.name.replace('bound ', '');
-        console.log(`${operation} - Execution time ${diff} ms`);
-        return result;
-    };
-    return wrapper;
-}
+const frontendPort = 9024;
+const backendPort = 9023;
 
-// const buffer = Buffer.alloc(1024 * 1024 * 2000)
+const queue = new Queue({ backendPort, frontendPort });
+queue.on('frontend', function (message) {
+    // console.log(Date.now() + ' - Proxying worker message through to frontend:', message.toString('utf8'));
+})
+queue.on('backend', function (message) {
+    // console.log(Date.now() + ' - Proxying client message through to backend:', message.toString('utf8'));
+});
 
 
 const send = (content) => {
@@ -24,31 +19,34 @@ const send = (content) => {
         const socket = zmq.socket('req');
         socket.monitor(1000 - 5, 0);
         socket.on('connect', () => {
-            this.connected = true;
-            socket.send(content);
+            console.log(`connected`)
         });
         socket.on('disconnect', (e, g) => {
-            this.connected = true;
-            socket.send(content);
+            console.log(`disconnected`)
         });
-        socket.connect(`tcp://${host}:${port}`);
-
-        socket.on('message', (...args) => {
-            return resolve(args);
+        socket.connect(`inproc://frontend-queue`);
+        socket.on('message', (message) => {
+            return resolve(message);
         });
         socket.on('error', (error) => {
             return resolve(error);
         });
-
+        socket.send(content);
     });
 }
 
-
 const main = async () => {
+    let count = 0;
     setInterval(async () => {
-        const content = 'hello';
+        if (count === 5) {
+            return;
+        }
+        count++;
+        const content = `message: ${count}`;
+        console.log(`client: send request`)
         const res = await send(content);
-        console.log(`client: send request ${res}`)
+        // const y = res.toString('utf-8');
+        console.log(`client: got request`)
     }, 1000)
 };
 

@@ -1,4 +1,4 @@
-const async = require('async');
+
 const zmq = require('zeromq');
 const EventEmitter = require('events');
 
@@ -7,6 +7,7 @@ class Queue extends EventEmitter {
     super();
     this.heartbeatLiveness = options.heartbeatLiveness || 5;
     this.heartbeatInterval = options.heartbeatInterval || 1000;
+    this.queueInterval = options.queueInterval || 1000;
 
     this.PPP_DELIMITER = Buffer.alloc(1, 0);
     this.PPP_READY = Buffer.alloc(1, 1);
@@ -15,12 +16,14 @@ class Queue extends EventEmitter {
     this.frontend = zmq.socket('router');   // for clients
     this.backend = zmq.socket('router');    // for workers
 
-    this.frontend.bind(`tcp://*:${9020}`);
-    this.backend.bind(options.backendUrl);
+    this.frontend.bind(`inproc://frontend-queue`);
+    this.backend.bind(`tcp://*:${options.backendPort}`);
 
     this.workers = [];
+    this.queue = [];
 
     setInterval(this._doHeartbeat.bind(this), this.heartbeatInterval);
+    setInterval(this._queueFlush.bind(this), this.queueInterval);
 
     this.backend.on('message', (...args) => {
 
@@ -30,79 +33,75 @@ class Queue extends EventEmitter {
         // we've already marked this worker as ready, above; nothing more to do
       }
       else {
-        const x = args[0].toString('utf8');
-        const y = args[1].toString('utf8');
-        const z = args[2].toString('utf8');
-        var message = [args[1], this.PPP_DELIMITER, args[2]];
+        const message = args.slice(1);
         this.frontend.send(message);
         this.emit('frontend', message.toString('utf8'));
       }
     });
 
     this.frontend.on('message', (...args) => {
-
       // send frontend message to next available worker
-      var nextWorker = this._workerNext();
+      const nextWorker = this._workerNext();
       if (!nextWorker) {
-        this.emit('no workers');
+        this.queue.push(args);
       }
       else {
-        // const x = args[0].toString('utf8');
-        // const y = args[1].toString('utf8');
-        // const z = args[1].toString('utf8');
-        var message = [nextWorker.identity, args[1], args[0]];
+        const message = [nextWorker.identity, ...args];
         this.backend.send(message);
         this.emit('backend', message.toString('utf8'));
       }
     });
   }
 
-  _workerReady(identity) {
-    var found = false;
-    for (var i = 0; i < this.workers.length; ++i) {
-      if (this.workers[i].identity.toString('utf8') === identity.toString('utf8')) {
-        // reset the timer
-        clearTimeout(this.workers[i].timerId);
-        this.workers[i].timerId = setTimeout(this._getPurgeWorkerTimeoutFn(identity), this.heartbeatInterval * this.heartbeatLiveness);
-        found = true;
-        break;
+  _queueFlush() {
+    const nextWorker = this._workerNext();
+    if (nextWorker) {
+      const q = this.queue.shift();
+      if (q) {
+        const message = [nextWorker.identity, ...q];
+        this.backend.send(message);
+        console.log(`backend: send`)
       }
     }
-    if (!found) {
-      this.workers.push(
-        {
-          identity: identity,
-          timerId: setTimeout(this._getPurgeWorkerTimeoutFn(identity), this.heartbeatInterval * this.heartbeatLiveness)
-        });
+  }
+
+  _workerReady(identity) {
+    const worker = this.workers.find(w => w.identity.toString('utf8') === identity.toString('utf8'))
+    if (worker) {
+      // reset the timer
+      clearTimeout(worker.timerId);
+      worker.timerId = setTimeout(this._getPurgeWorkerTimeoutFn(identity), this.heartbeatInterval * this.heartbeatLiveness);
+    }
+    else {
+      this.workers.push({
+        identity,
+        timerId: setTimeout(this._getPurgeWorkerTimeoutFn(identity), this.heartbeatInterval * this.heartbeatLiveness)
+      });
     }
   };
 
   _getPurgeWorkerTimeoutFn(identity) {
-    return function () {
-      for (var i = 0; i < this.workers.length; ++i) {
-        var worker = this.workers[i];
+    return () => {
+      for (let i = 0; i < this.workers.length; ++i) {
+        const worker = this.workers[i];
         if (worker.identity.toString('utf8') === identity.toString('utf8')) {
           this.workers.splice(i, 1);
         }
       }
-    }.bind(this);
+    };
   };
 
   _workerNext() {
-    var worker = this.workers.shift();
+    const worker = this.workers.shift();
     if (worker) {
       clearTimeout(worker.timerId);
     }
     return worker;
-  };
+  }
 
   _doHeartbeat() {
-    async.each(this.workers, function (worker, cb) {
-      this.backend.send([worker.identity, this.PPP_DELIMITER, this.PPP_HEARTBEAT]);
-      cb();
-    }.bind(this));
+    return Promise.all(this.workers.map(w => this.backend.send([w.identity, this.PPP_DELIMITER, this.PPP_HEARTBEAT])));
   };
-
-};
+}
 
 module.exports = Queue;
